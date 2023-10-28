@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <style>
+        /* Set the map container's dimensions */
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+
+        button {
+            padding: 5px 10px;
+            font-size: 15px;
+            border-radius: 100vw;
+            background: #0080ff;
+            color: white;
+            border: 0px !important;
+            outline: none !important;
+        }
+
+        input {
+            padding: 5px 10px;
+            font-size: 15px;
+            border-radius: 100vw;
+            background: #c3fff6;
+            color: #000;
+            border: 0px !important;
+            outline: none !important;
+        }
+
+        select {
+            padding: 5px 5px;
+            font-size: 15px;
+            border-radius: 100vw;
+            background: #c3fff6;
+            color: #000;
+            border: 0px !important;
+            outline: none !important;
+        }
+
+        input::placeholder {
+            color: #000;
+        }
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body style="background: #000; color: antiquewhite;">
+    
+    <!-- Map container -->
+    <div id="map" style="border-radius: 20px; overflow: hidden; border: 2px solid white"></div>
+
+    <!-- Input fields for latitude, longitude, and marker name -->
+    <form id="main-form" style="margin-top: 20px;">
+        <label for="lat">Latitude:</label>
+        <input type="text" autofocus id="lat" placeholder="Enter Latitude">
+        <label for="lng">Longitude:</label>
+        <input type="text" id="lng" placeholder="Enter Longitude">
+        <label for="markerName">Marker Name:</label>
+        <input type="text" id="markerName" placeholder="Enter Marker Name">
+        <button type="submit">Place Marker</button>
+    </form>
+
+    <br>
+    
+    <!-- Dropdowns for selecting markers -->
+    <label for="marker1">Marker 1:</label>
+    <select id="marker1"></select>
+    <label for="marker2">Marker 2:</label>
+    <select id="marker2"></select>
+    
+    <!-- Radio buttons to select line type -->
+    <label>Line Type:</label>
+    <input type="radio" id="geodesic" name="lineType" value="geodesic" checked>
+    <label for="geodesic">Geodesic</label>
+    <input type="radio" id="straight" name="lineType" value="straight">
+    <label for="straight">Straight</label>
+    
+    <button onclick="connectMarkers()">Connect Markers</button>
+    <br><br>
+    <label for="amarker1">Marker 1:</label>
+    <select id="amarker1"></select>
+    <label for="amarker2">Marker 2:</label>
+    <select id="amarker2"></select>
+    <label for="amarker3">Marker 3:</label>
+    <select id="amarker3"></select>
+    <button onclick="calculateArea()">Calculate Area</button>
+    <script>
+        var map; // Declare a global map variable
+        var markers = []; // Create an array to store editable markers
+
+        // Function to initialize and display the map
+        function initMap() {
+            // Set the initial map center
+            var myLatLng = { lat: 0, lng: 0 };
+
+            // Create a map object and set its properties
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: myLatLng,
+                zoom: 1
+            });
+        }
+
+        // Function to add an editable marker
+        function addMarker(location, name) {
+            var marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                draggable: true, // Make the marker draggable
+                title: name // Set the marker's title (name)
+            });
+
+            markers.push(marker); // Add the marker to the array
+            
+            // Add an event listener to update the marker's position and title when it is dragged
+            google.maps.event.addListener(marker, 'dragend', function() {
+                updateMarkerPosition(marker);
+            });
+
+            // Update the marker dropdowns
+            updateMarkerDropdowns();
+        }
+
+        // Function to update the marker dropdowns
+        function updateMarkerDropdowns() {
+            var markerDropdown1 = document.getElementById('marker1');
+            var markerDropdown2 = document.getElementById('marker2');
+
+            // Clear existing options
+            markerDropdown1.innerHTML = '';
+            markerDropdown2.innerHTML = '';
+
+            // Add marker options to the dropdowns
+            markers.forEach(function(marker, index) {
+                var option = document.createElement('option');
+                option.text = marker.getTitle();
+                option.value = index;
+                markerDropdown1.add(option);
+                option = document.createElement('option');
+                option.text = marker.getTitle();
+                option.value = index;
+                markerDropdown2.add(option);
+            });
+            updateAMarkerDropdowns()
+        }
+
+        function calculateArea() {
+            var marker1Index = document.getElementById('amarker1').value;
+            var marker2Index = document.getElementById('amarker2').value;
+            var marker3Index = document.getElementById('amarker3').value;
+            var lineType = document.querySelector('input[name="lineType"]:checked').value;
+
+            if (marker1Index !== marker2Index) {
+                var marker1 = markers[marker1Index];
+                var marker2 = markers[marker2Index];
+                
+                if (lineType === "geodesic") {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                } else {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: false,
+                        strokeColor: '#00FF00',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                }
+            }
+            
+            if (marker3Index !== marker2Index) {
+                var marker1 = markers[marker3Index];
+                var marker2 = markers[marker2Index];
+                
+                if (lineType === "geodesic") {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                } else {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: false,
+                        strokeColor: '#00FF00',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                }
+            }
+        
+            if (marker3Index !== marker1Index) {
+                var marker1 = markers[marker3Index];
+                var marker2 = markers[marker1Index];
+                
+                if (lineType === "geodesic") {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                } else {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: false,
+                        strokeColor: '#00FF00',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                }
+            }
+        
+            var marker1Index = document.getElementById('amarker1').value;
+            var marker2Index = document.getElementById('amarker2').value;
+            var marker3Index = document.getElementById('amarker3').value;
+            if(marker1Index === marker2Index || marker2Index === marker3Index || marker1Index === marker3Index) {
+                alert("Please select different markers to connect.");
+                return;
+            }
+            const a = 6378137.0; // Semi-major axis in meters
+            const b = 6356752.314245; // Semi-minor axis in meters
+            const f = 1 / 298.257223563; // Flattening of the ellipsoid
+
+            function calculateVincentyDistance(lat1, lon1, lat2, lon2) {
+                var φ1 = lat1 * (Math.PI)/180; // Latitude of point 1 in radians
+                var λ1 = lon1 * (Math.PI)/180; // Longitude of point 1 in radians
+                var φ2 = lat2 * (Math.PI)/180; // Latitude of point 2 in radians
+                var λ2 = lon2 * (Math.PI)/180; // Longitude of point 2 in radians
+    
+                var Δλ = λ2 - λ1;
+        
+                var U1 = Math.atan((1 - f) * Math.tan(φ1));
+                var U2 = Math.atan((1 - f) * Math.tan(φ2));
+        
+                var cosU1 = Math.cos(U1);
+                var cosU2 = Math.cos(U2);
+                var sinU1 = Math.sin(U1);
+                var sinU2 = Math.sin(U2);
+        
+                var sinLambda;
+                var cosLambda;
+                var sinAlpha;
+                var cosSqAlpha;
+        
+                var σ;
+                var cosSigma;
+                var cos2SigmaM;
+                var sinSigma;
+        
+                var λ = Δλ;
+                var λPrev;
+    
+                var iterLimit = 1000; // Maximum number of iterations (adjust as needed)
+                var iterCount = 0;
+        
+                do {
+                    sinLambda = Math.sin(λ);
+                    cosLambda = Math.cos(λ);
+        
+                    sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) + (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
+        
+                    if (sinSigma == 0) {
+                        return 0; // Points are co-located
+                    }
+        
+                    cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
+                    σ = Math.atan2(sinSigma, cosSigma);
+        
+                    sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
+                    cosSqAlpha = 1 - sinAlpha * sinAlpha;
+        
+                    if (cosSqAlpha != 0) {
+                        cos2SigmaM = cosSigma - (2 * sinU1 * sinU2) / cosSqAlpha;
+                    } else {
+                        cos2SigmaM = 0;
+                    }
+        
+                    var C = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha));
+                    λPrev = λ;
+                    λ = Δλ + (1 - C) * f * sinAlpha * (σ + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+                } while (Math.abs(λ - λPrev) > 1e-12 && ++iterCount < iterLimit);
+                if (iterCount == iterLimit) {
+                    // Iteration did not converge, you may want to handle this case accordingly
+                    return NaN
+                }
+    
+                var uSq = cosSqAlpha * (a * a - b * b) / (b * b);
+                var A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+                var B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+                var Δσ = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) - B / 6 * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+                var s = b * A * (σ - Δσ);
+        
+                return s; // Distance in meters
+            }
+        
+            function calculateInteriorAngle(distanceAB, distanceBC, distanceCA) {
+                var cosAngle = (Math.cos(distanceAB) - Math.cos(distanceBC) * Math.cos(distanceCA)) / (Math.sin(distanceBC) * Math.sin(distanceCA));
+                return Math.acos(cosAngle);
+            }
+        
+            function calculateInteriorAngles(distances) {
+        
+                // Check if the number of distances is valid (should be 3 for a spherical triangle)
+                if (distances.length != 3) {
+                    throw new IllegalArgumentException("The number of distances should be 3 to form a spherical triangle.");
+                }
+
+
+                let a = distances[0] / 6367489.187059039; 
+                let b = distances[1] / 6367490.4377402235;
+                let c = distances[2] / 6368976.217032442;
+
+            // Calculate the interior angles using the spherical law of cosines
+            let A = Math.acos((Math.cos(a) - Math.cos(b) * Math.cos(c)) / (Math.sin(b) * Math.sin(c)));
+            let B = Math.acos((Math.cos(b) - Math.cos(c) * Math.cos(a)) / (Math.sin(c) * Math.sin(a)));
+            let C = Math.acos((Math.cos(c) - Math.cos(a) * Math.cos(b)) / (Math.sin(a) * Math.sin(b)));
+
+            // Convert angles from radians to degrees
+            A = A * 180/Math.PI;
+            B = B * 180/Math.PI;
+            C = C * 180/Math.PI;
+
+            return [A, B, C];
+    }
+        
+            function calculateSphericalArea(interiorAnglesDegrees, radius) {
+
+                let interiorAnglesRadians = interiorAnglesDegrees
+                        .map(rad => rad * (Math.PI)/180)
+
+                let A = interiorAnglesRadians[0];
+                let B = interiorAnglesRadians[1];
+                let C = interiorAnglesRadians[2];
+
+                let A_rad = radius * radius * (A + B + C - Math.PI); // Calculate the spherical area in square meters
+                return A_rad;
+            }
+            console.log(markers[0])
+            let lat1 = markers[0].position.lat()
+            let lon1 =  markers[0].position.lng()
+
+            let lat2 = markers[1].position.lat()
+            let lon2 =  markers[1].position.lng()
+
+            let lat3 = markers[2].position.lat()
+            let lon3 =  markers[2].position.lng()
+
+            console.log(lat1, lon1, lat2, lon2)
+            let distance1to2 = calculateVincentyDistance(lat1, lon1, lat2, lon2);
+            let distance2to3 = calculateVincentyDistance(lat2, lon2, lat3, lon3);
+            let distance3to1 = calculateVincentyDistance(lat3, lon3, lat1, lon1);
+
+            let distances = [distance1to2, distance2to3, distance3to1];
+            let interiorAngles = calculateInteriorAngles(distances);
+            let angle_A = interiorAngles[0];
+            let angle_B = interiorAngles[1];
+            let angle_C = interiorAngles[2];
+
+            // Calculate the area of the spherical triangle using Girard's theorem
+            let earthRadiusMeters = 6371000; // Earth's radius in meters
+            let triangleAreaMetersSquared = calculateSphericalArea(interiorAngles, earthRadiusMeters);
+
+            alert(`The area between the points is ` + (triangleAreaMetersSquared/10**6) + "km^2.")
+        }
+
+        function updateAMarkerDropdowns() {
+            var markerDropdown1 = document.getElementById('amarker1');
+            var markerDropdown2 = document.getElementById('amarker2');
+            var markerDropdown3 = document.getElementById('amarker3');
+
+
+            // Clear existing options
+            markerDropdown1.innerHTML = '';
+            markerDropdown2.innerHTML = '';
+            markerDropdown3.innerHTML = '';
+
+            // Add marker options to the dropdowns
+            markers.forEach(function(marker, index) {
+                var option = document.createElement('option');
+                option.text = marker.getTitle();
+                option.value = index;
+                markerDropdown1.add(option);
+                option = document.createElement('option');
+                option.text = marker.getTitle();
+                option.value = index;
+                markerDropdown2.add(option);
+                option = document.createElement('option');
+                option.text = marker.getTitle();
+                option.value = index;
+                markerDropdown3.add(option);
+            });
+        }
+
+        // Function to update a marker's position and title
+        function updateMarkerPosition(marker) {
+            var position = marker.getPosition();
+            var name = marker.getTitle();
+            // You can use the position and name to update your data or perform other actions.
+            console.log("Marker position updated: " + position.toString());
+            console.log("Marker name: " + name);
+        }
+
+        // Function to place a marker based on user input
+        function placeMarker(e) {
+            e.preventDefault()
+            var lat = parseFloat(document.getElementById('lat').value);
+            var lng = parseFloat(document.getElementById('lng').value);
+            var name = document.getElementById('markerName').value;
+
+            if (!isNaN(lat) && !isNaN(lng) && name) {
+                var location = new google.maps.LatLng(lat, lng);
+                addMarker(location, name);
+            } else {
+                alert("Please enter valid latitude, longitude, and a marker name.");
+            }
+        }
+
+        document.querySelector("#main-form").addEventListener("submit", placeMarker)
+
+        // Function to connect two markers with a geodesic or straight line
+        function connectMarkers() {
+            var marker1Index = document.getElementById('marker1').value;
+            var marker2Index = document.getElementById('marker2').value;
+            var lineType = document.querySelector('input[name="lineType"]:checked').value;
+
+            if (marker1Index !== marker2Index) {
+                var marker1 = markers[marker1Index];
+                var marker2 = markers[marker2Index];
+                
+                if (lineType === "geodesic") {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                } else {
+                    var line = new google.maps.Polyline({
+                        path: [marker1.getPosition(), marker2.getPosition()],
+                        geodesic: false,
+                        strokeColor: '#00FF00',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+                    line.setMap(map);
+                }
+            } else {
+                alert("Please select different markers to connect.");
+            }
+        }
+    </script>
+
+    <!-- Include the Google Maps JavaScript API with your API key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADnZQoOirBs00d6JfDDR3pX03dZvnMNmo&callback=initMap" async defer></script>
+</body>
+</html>
